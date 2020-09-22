@@ -1,6 +1,6 @@
 package lexer
 
-import "piglang/token"
+import "github.com/piglang/token"
 
 type Lexer struct {
 	input    string

@@ -1,8 +1,9 @@
 package lexer
 
 import (
-	"piglang/token"
 	"testing"
+
+	"github.com/piglang/token"
 )
 
 func TestNextToken(t *testing.T) {
