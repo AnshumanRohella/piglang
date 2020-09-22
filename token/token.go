@@ -7,6 +7,11 @@ type Token struct {
 	Literal string
 }
 
+var keywordMap = map[string]TokenType{
+	"fn":  FUNCTION,
+	"let": LET,
+}
+
 const (
 	//ILLEGAL token
 	ILLEGAL = "ILLEGAL"
@@ -31,3 +36,10 @@ const (
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
 )
+
+func GetIdentifierType(identifier string) TokenType {
+	if tok, ok := keywordMap[identifier]; ok {
+		return tok
+	}
+	return IDENT
+}
