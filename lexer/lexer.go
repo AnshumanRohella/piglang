@@ -1,8 +1,6 @@
 package lexer
 
 import (
-	"fmt"
-
 	"github.com/piglang/token"
 )
 
@@ -24,7 +22,13 @@ func (l *Lexer) NextToken() token.Token {
 	l.eatWhiteSpace()
 	switch l.currChar {
 	case '=':
-		tok = newToken(token.ASSIGN, l.currChar)
+		if l.peekNextChar() == '=' {
+			pos := l.currIdx
+			l.readChar()
+			tok = token.Token{Type: token.EQ, Literal: l.input[pos:l.nextIdx]}
+		} else {
+			tok = newToken(token.ASSIGN, l.currChar)
+		}
 	case ';':
 		tok = newToken(token.SEMICOLON, l.currChar)
 	case '(':
@@ -35,6 +39,24 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.COMMA, l.currChar)
 	case '+':
 		tok = newToken(token.PLUS, l.currChar)
+	case '-':
+		tok = newToken(token.MINUS, l.currChar)
+	case '!':
+		if l.peekNextChar() == '=' {
+			pos := l.currIdx
+			l.readChar()
+			tok = token.Token{Type: token.NOT_EQ, Literal: l.input[pos:l.nextIdx]}
+		} else {
+			tok = newToken(token.BANG, l.currChar)
+		}
+	case '/':
+		tok = newToken(token.SLASH, l.currChar)
+	case '*':
+		tok = newToken(token.ASTERISK, l.currChar)
+	case '<':
+		tok = newToken(token.LT, l.currChar)
+	case '>':
+		tok = newToken(token.GT, l.currChar)
 	case '{':
 		tok = newToken(token.LBRACE, l.currChar)
 	case '}':
@@ -45,7 +67,6 @@ func (l *Lexer) NextToken() token.Token {
 	default:
 		if isLetter(l.currChar) {
 			tok.Literal = l.readIdentifier()
-			fmt.Printf("Got %s ", tok.Literal)
 			tok.Type = token.GetIdentifierType(tok.Literal)
 			return tok
 		} else if isDigit(l.currChar) {
@@ -70,6 +91,14 @@ func (l *Lexer) readIdentifier() string {
 		l.readChar()
 	}
 	return l.input[pos:l.currIdx]
+}
+
+func (l *Lexer) peekNextChar() byte {
+	if l.nextIdx >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.nextIdx]
+	}
 }
 
 func (l *Lexer) readNumber() string {
