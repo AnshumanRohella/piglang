@@ -8,8 +8,7 @@ import (
 )
 
 func TestLetStatement(t *testing.T) {
-	input := `
-	let x = 5;
+	input := `let x = 5;
 	let y = 10;
 	let foo = 80321;
 	`
