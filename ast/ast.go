@@ -24,6 +24,7 @@ type Program struct {
 	Statements []Statement
 }
 
+//TokenLiteral function for Program returns the token literal for the first statement.
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
 		return p.Statements[0].TokenLiteral()
@@ -32,6 +33,7 @@ func (p *Program) TokenLiteral() string {
 	}
 }
 
+//LetStatement representing the let statement.
 type LetStatement struct {
 	Token token.Token
 	Name  *Identifier
