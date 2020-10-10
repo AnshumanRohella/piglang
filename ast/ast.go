@@ -33,6 +33,8 @@ func (p *Program) TokenLiteral() string {
 	}
 }
 
+// Statement Types here
+
 //LetStatement representing the let statement.
 type LetStatement struct {
 	Token token.Token
@@ -55,3 +57,12 @@ func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 
 // Indentifier can procude a value in some cases. Eg. x=y
 func (i *Identifier) expressionNode() {}
+
+//Return statement
+type ReturnStatement struct {
+	Token       token.Token
+	ReturnValue Expression
+}
+
+func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+func (rs *ReturnStatement) statementNode()       {}

@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/piglang/ast"
 	"github.com/piglang/lexer"
 	"github.com/piglang/token"
@@ -11,13 +13,14 @@ type Parser struct {
 
 	curToken  token.Token
 	peekToken token.Token
+
+	errors []string
 }
 
 func New(l *lexer.Lexer) *Parser {
 
 	// This may cause problems. use &Parser.
-	p := new(Parser)
-	p.l = l
+	p := &Parser{l: l, errors: []string{}}
 
 	// initialize current and peek token both.
 	p.nextToken()
@@ -31,6 +34,15 @@ func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
 
+}
+
+func (p *Parser) Errors() []string {
+	return p.errors
+}
+
+func (p *Parser) addPeekError(t token.TokenType) {
+	msg := fmt.Sprintf("Expected next token to be %s, got %s instead.", t, p.peekToken.Type)
+	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) ParseProgram() *ast.Program {
@@ -94,5 +106,6 @@ func (p *Parser) expectPeekAndProceed(t token.TokenType) bool {
 		p.nextToken()
 		return true
 	}
+	p.addPeekError(t)
 	return false
 }
