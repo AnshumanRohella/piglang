@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"github.com/piglang/ast/statements"
 
 	"github.com/piglang/ast"
 	"github.com/piglang/lexer"
@@ -73,8 +74,8 @@ func (p *Parser) parseStatement() ast.Statement {
 
 }
 
-func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
-	stmt := &ast.ReturnStatement{Token: p.curToken}
+func (p *Parser) parseReturnStatement() *statements.ReturnStatement {
+	stmt := &statements.ReturnStatement{Token: p.curToken}
 	p.nextToken()
 
 	//TODO: Skip expression until semicolon for now
@@ -85,15 +86,15 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
-func (p *Parser) parseLetStatement() *ast.LetStatement {
-	stmt := new(ast.LetStatement)
+func (p *Parser) parseLetStatement() *statements.LetStatement {
+	stmt := new(statements.LetStatement)
 	stmt.Token = p.curToken
 
 	if !p.expectPeekAndProceed(token.IDENT) {
 		return nil
 	}
 
-	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	stmt.Name = &statements.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 	if !p.expectPeekAndProceed(token.ASSIGN) {
 		return nil

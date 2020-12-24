@@ -1,14 +1,16 @@
-package ast
+package statements
+
 
 import (
+	"github.com/piglang/ast"
 	"github.com/piglang/token"
 	"testing"
 )
 
 
 func TestString(t *testing.T){
-	program := &Program{
-		Statements: []Statement{
+	program := &ast.Program{
+		Statements: []ast.Statement{
 			&LetStatement{
 				Token: token.Token{Type: token.LET, Literal: "let"},
 				Name: &Identifier{

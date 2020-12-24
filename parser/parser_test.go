@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"testing"
-
 	"github.com/piglang/ast"
+	"github.com/piglang/ast/statements"
 	"github.com/piglang/lexer"
+	"testing"
 )
 
 func TestLetStatement(t *testing.T) {
@@ -70,7 +70,7 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 		t.Errorf("s.TokenLiteral not 'let'. got=%q", s.TokenLiteral())
 	}
 
-	letStmt, ok := s.(*ast.LetStatement)
+	letStmt, ok := s.(*statements.LetStatement)
 	if !ok {
 		t.Errorf("s not a *ast.LetStatement. got=%T", s)
 		return false
@@ -106,7 +106,7 @@ func TestReturnStatement(t *testing.T) {
 	}
 
 	for _, stmt := range program.Statements {
-		returnStmt, ok := stmt.(*ast.ReturnStatement)
+		returnStmt, ok := stmt.(*statements.ReturnStatement)
 		if !ok {
 			t.Errorf("stmt not *ast.ReturnStatement. Got=%T", stmt)
 			continue

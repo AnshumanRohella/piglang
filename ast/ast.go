@@ -4,8 +4,6 @@ package ast
 
 import (
 	"bytes"
-
-	"github.com/piglang/token"
 )
 
 type Node interface {
@@ -15,12 +13,12 @@ type Node interface {
 
 type Statement interface {
 	Node
-	statementNode()
+	StatementNode()
 }
 
 type Expression interface {
 	Node
-	expressionNode()
+	ExpressionNode()
 }
 
 //Program is the root node of every AST.
@@ -46,86 +44,4 @@ func (p *Program) String() string {
 	}
 
 	return out.String()
-}
-
-// Statement Types here
-
-//LetStatement representing the let statement.
-type LetStatement struct {
-	Token token.Token
-	Name  *Identifier
-	Value Expression
-}
-
-func (ls *LetStatement) statementNode() {}
-
-//TokenLiteral implementation for Node
-func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
-func (ls *LetStatement) String() string {
-	var out bytes.Buffer
-	out.WriteString(ls.TokenLiteral() + " ")
-	out.WriteString(ls.Name.String())
-	out.WriteString(" = ")
-
-	if ls.Value != nil {
-		out.WriteString(ls.Value.String())
-	}
-
-	out.WriteString(";")
-
-	return out.String()
-}
-
-//Identifier to repesent an identifier token.
-type Identifier struct {
-	Token token.Token
-	Value string
-}
-
-//TokenLiteral override for Statement
-func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
-func (i *Identifier) String() string {
-	return i.Value
-}
-
-// Indentifier can procude a value in some cases. Eg. x=y
-func (i *Identifier) expressionNode() {}
-
-//ReturnStatement statement
-type ReturnStatement struct {
-	Token       token.Token
-	ReturnValue Expression
-}
-
-//TokenLiteral override for Statement
-func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
-func (rs *ReturnStatement) statementNode()       {}
-func (rs *ReturnStatement) String() string{
-	var out bytes.Buffer
-
-	out.WriteString(rs.TokenLiteral() + " ")
-
-	if rs.ReturnValue != nil {
-		out.WriteString(rs.ReturnValue.String())
-	}
-
-	out.WriteString(";")
-	return out.String()
-}
-
-//ExpressionStatement statement
-type ExpressionStatement struct {
-	Token      token.Token
-	Expression Expression
-}
-
-//TokenLiteral override for Statement
-func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
-func (es *ExpressionStatement) statementNode()       {}
-func (es *ExpressionStatement) String() string {
-
-	if es.Expression != nil {
-		return es.Expression.String()
-	}
-	return ""
 }
