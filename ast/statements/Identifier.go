@@ -2,7 +2,7 @@ package statements
 
 import "github.com/piglang/token"
 
-//Identifier to repesent an identifier token.
+//Identifier to represent an identifier token. The value here comes from the token.Literal
 type Identifier struct {
 	Token token.Token
 	Value string
@@ -14,6 +14,6 @@ func (i *Identifier) String() string {
 	return i.Value
 }
 
-// Identifier can precede a value in some cases. Eg. x=y
+// ExpressionNode implementation for Expression interface. Just like any expression identifiers can produce a value too. eg x=y.
 func (i *Identifier) ExpressionNode() {}
 

@@ -2,6 +2,7 @@ package token
 
 type TokenType string
 
+//Token is the basic structure for each token in piglang. The TokenType represents the various tokens in the language and the Literal represents the exact token literal.
 type Token struct {
 	Type    TokenType
 	Literal string

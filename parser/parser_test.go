@@ -1,9 +1,13 @@
 package parser
 
 import (
+	"fmt"
 	"github.com/piglang/ast"
+	"github.com/piglang/ast/expressions"
+	"github.com/piglang/ast/literals"
 	"github.com/piglang/ast/statements"
 	"github.com/piglang/lexer"
+	"github.com/piglang/token"
 	"testing"
 )
 
@@ -52,6 +56,8 @@ func TestParserErrorCreation(t *testing.T) {
 	checkParserErrors(t, p)
 
 }
+
+// Check if any errors were registered during the parsing.
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 	if len(errors) == 0 {
@@ -116,4 +122,127 @@ func TestReturnStatement(t *testing.T) {
 		}
 	}
 
+}
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "testIdent;"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program doesn't have correct number of statements. got %d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*statements.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statement[0] is not of the type ExpressionStatement. got %T", stmt)
+	}
+
+	ident, ok := stmt.Expression.(*statements.Identifier)
+	if !ok {
+		t.Fatalf("stmt is not of the type Identifier. got %T", ident)
+	}
+
+	if ident.Token.Type != token.IDENT {
+		t.Fatalf("token type is incorrect, expected %s got %s", token.IDENT, ident.Token.Type)
+	}
+	if ident.Value != "testIdent" {
+		t.Fatalf("token value is incorrect, expecter %s got %s", input, ident.Value)
+	}
+
+}
+
+func TestIntegerLiteral(t *testing.T) {
+	input := "5;"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program doesn't have correct number of statements. got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*statements.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement[0] is not of the type ExpressionStatement. Got %T", program.Statements[0])
+	}
+
+	literal, ok := stmt.Expression.(*literals.IntegerLiteral)
+	if !ok {
+		t.Errorf("Expression is not of the type IntegerLiteral. got %T", stmt.Expression)
+	}
+
+	if literal.TokenLiteral() != "5" {
+		t.Errorf("Value of the literal is not %s. got %s", "5", literal.TokenLiteral())
+	}
+
+}
+
+// Testing parsing for prefix expressions like !5, -2, etc.
+func TestParsingPrefixExpression(t *testing.T){
+
+	prefix := []struct{
+		input string
+		prefixOperator string
+		operand int64
+	}{
+		{"-5", "-", 5},
+		{"!6", "!", 6},
+	}
+
+	for _, tc := range prefix {
+		l := lexer.New(tc.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1{
+			t.Fatalf("The number of statements is not correct. Expected 1, got %d",len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*statements.ExpressionStatement)
+		if !ok {
+			t.Fatalf("statement is not of the type ExpressionStatement. Got %T", program.Statements[0])
+		}
+
+
+		expression, ok := stmt.Expression.(*expressions.PrefixExpression)
+		if !ok {
+			t.Fatalf("Statement is not of the type PrefixExpression. Got %T", stmt)
+		}
+
+		if expression.Operator != tc.prefixOperator {
+			t.Fatalf("The Operator is not correct. Expected %s got %s", tc.prefixOperator, expression.Operator)
+		}
+
+		if !testIntegerLiteral(t, expression.RightOperand, tc.operand){
+			return
+		}
+
+	}
+
+}
+
+// Helper function to explicitly check if an Expression is an Integer Literal
+func testIntegerLiteral(t *testing.T, il ast.Expression, val int64) bool{
+	intLiteral, ok := il.(*literals.IntegerLiteral)
+	if !ok {
+		t.Errorf("Expression is not IntegerLiteral type. Got %T", il)
+		return false
+	}
+
+	if intLiteral.Value != val {
+		t.Errorf("The value for the integer is not correct. Expecter %d got %d", val, intLiteral.Value)
+		return false
+	}
+
+	if intLiteral.TokenLiteral() != fmt.Sprint(val){
+		t.Errorf("Integer literal not %d. Got %s", val, intLiteral.TokenLiteral())
+		return false
+	}
+	return true
 }

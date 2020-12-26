@@ -2,11 +2,30 @@ package parser
 
 import (
 	"fmt"
-	"github.com/piglang/ast/statements"
-
 	"github.com/piglang/ast"
+	"github.com/piglang/ast/expressions"
+	"github.com/piglang/ast/literals"
+	"github.com/piglang/ast/statements"
 	"github.com/piglang/lexer"
 	"github.com/piglang/token"
+	"strconv"
+)
+
+//Expression operator precedence
+const (
+	_ int = iota
+	LOWEST
+	EQUALS
+	LESSGREATER
+	SUM
+	PRODUCT
+	PREFIX
+	CALL
+)
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func() ast.Expression
 )
 
 type Parser struct {
@@ -16,6 +35,17 @@ type Parser struct {
 	peekToken token.Token
 
 	errors []string
+
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
+}
+
+func (p *Parser) registerPrefixParseFn(t token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[t] = fn
+}
+
+func (p *Parser) registerInfixParseFn(t token.TokenType, fn infixParseFn) {
+	p.infixParseFns[t] = fn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -27,7 +57,38 @@ func New(l *lexer.Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 
+	// initialize expression parsing functions map
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.infixParseFns = make(map[token.TokenType]infixParseFn)
+
+	// Register parsing functions.
+	p.registerPrefixParseFn(token.IDENT, p.parseIdentifier)
+	p.registerPrefixParseFn(token.INT, p.parseIntegerLiteral)
+	p.registerPrefixParseFn(token.BANG,p.parsePrefixExpressions)
+	p.registerPrefixParseFn(token.MINUS,p.parsePrefixExpressions)
+
 	return p
+}
+
+// Expression Parsing functions.
+// Parse Identifier
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &statements.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+// Parse Integer Literals by converting the string literal to integer.
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	lit := &literals.IntegerLiteral{Token: p.curToken}
+
+	value, err := strconv.ParseInt(p.curToken.Literal, 0, 62)
+	if err != nil {
+		msg := fmt.Sprintf("Could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+
+	lit.Value = value
+	return lit
 }
 
 func (p *Parser) nextToken() {
@@ -61,7 +122,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 	return program
 }
 
-// real deal
+// Parse various statements.
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.LET:
@@ -69,9 +130,42 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
+		return p.parseExpressionStatements() //Expressions are the default statements after all the cases.
+	}
+
+}
+
+func (p *Parser) parseExpressionStatements() *statements.ExpressionStatement {
+
+	stmt := &statements.ExpressionStatement{Token: p.curToken}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+// Checks whether we have a function registered for current token at prefix position.
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefixFn := p.prefixParseFns[p.curToken.Type]
+
+	if prefixFn == nil {
+		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
 
+	leftExp := prefixFn()
+
+	return leftExp
+
+}
+
+func (p *Parser) noPrefixParseFnError(t token.TokenType){
+	msg := fmt.Sprintf("no prefix parse function found for token %s", t)
+	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) parseReturnStatement() *statements.ReturnStatement {
@@ -84,6 +178,19 @@ func (p *Parser) parseReturnStatement() *statements.ReturnStatement {
 	}
 
 	return stmt
+}
+
+// Parsers for acual prefix expressions. This will be called in case the prefix is one of the supported prefixes in PrefixExpression.go
+func (p *Parser) parsePrefixExpressions() ast.Expression {
+	exp := &expressions.PrefixExpression{
+		Token: p.curToken,
+		Operator: p.curToken.Literal,
+	}
+
+	p.nextToken()
+	exp.RightOperand = p.parseExpression(PREFIX)
+
+	return exp
 }
 
 func (p *Parser) parseLetStatement() *statements.LetStatement {
