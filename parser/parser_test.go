@@ -527,3 +527,62 @@ func testIsBooleanLiteral(t *testing.T,bl ast.Expression, val bool ) bool {
 
 	return true
 }
+
+func TestIfExpression(t *testing.T){
+	input := `if ( x < y ) { x }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Number of statements incorrect. Exptected %d, got %d",1, len(program.Statements))
+	}
+
+	exp, ok := program.Statements[0].(*statements.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement is not of the type Expression Statement. Got %T",exp)
+	}
+
+	ifexp, ok := exp.Expression.(*expressions.IfExpresion)
+	if !ok {
+		t.Fatalf("Expression is not of the type IfExpression. Got %T", ifexp)
+	}
+
+	if !testInfixExpression(t, ifexp.Condition, "x","<","y"){
+		return
+	}
+
+	if len(ifexp.Consequence.Statements) != 1 {
+		t.Fatalf(" Consequence is not 1 statement, Got %d", len(ifexp.Consequence.Statements))
+	}
+
+	consequence, ok :=  ifexp.Consequence.Statements[0].(*statements.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Consequence statement is not of the type Expression Statment. Got %T", ifexp.Consequence.Statements[0])
+	}
+
+	if !testIsIdentifier(t,consequence.Expression,"x"){
+		return
+	}
+
+	if ifexp.Alternative != nil {
+		t.Fatalf("Aleternative expression is not nil. Got %+v", ifexp.Alternative)
+	}
+}
+
+func TestIfElseExpression(t *testing.T){
+	input := `if ( x > y ) { x } else { y }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t,p)
+	stmts := program.Statements
+
+	if len(stmts) != 1 {
+		t.Fatalf("No. of statements not correct. Expected 1. Got %d ", len(stmts))
+	}
+
+}
