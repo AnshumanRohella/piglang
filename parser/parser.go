@@ -98,6 +98,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefixParseFn(token.FALSE, p.parseBoolean)
 	p.registerPrefixParseFn(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefixParseFn(token.IF,p.parseIfExpression)
+	p.registerPrefixParseFn(token.FUNCTION,p.parseFunctionLiteral)
 
 	// register infix parser
 	p.registerInfixParseFn(token.PLUS, p.parseInfixExpression)
@@ -350,6 +351,54 @@ func (p *Parser) parseBlockStatement() *statements.BlockStatement {
 		p.nextToken()
 	}
 	return block
+}
+
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	functionExpression := &literals.FunctionLiteral{Token:p.curToken}
+
+	if !p.expectPeekAndProceed(token.LPAREN) {
+		return nil
+	}
+
+	functionExpression.Arguments = p.parseFunctionArguments()
+
+	if !p.expectPeekAndProceed(token.LBRACE){
+		return nil
+	}
+
+	functionExpression.Body = p.parseBlockStatement()
+
+	return functionExpression
+
+}
+
+func (p *Parser) parseFunctionArguments() []*statements.Identifier {
+	var identifiers []*statements.Identifier
+
+	// no arguments, proceed the token and return empty arg list.
+	if p.peekTokenIs(token.RPAREN){
+		p.nextToken()
+		return identifiers
+	}
+
+	p.nextToken()
+
+	ident := &statements.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	identifiers = append(identifiers, ident)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // the at ',' token here.
+		p.nextToken() // skip ',' and be at the current argument.
+
+		ident := &statements.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		identifiers = append(identifiers, ident)
+	}
+	// function literal signature should end with ')'
+	if !p.expectPeekAndProceed(token.RPAREN){
+		return nil
+	}
+
+	return identifiers
 }
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {
